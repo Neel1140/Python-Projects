@@ -232,3 +232,50 @@ class LibraryUI:
                 status = "Available" if row[3] == 1 else "Issued"
                 display_text = f"ID: {row[0]} | {row[1]} by {row[2]} [{status}]"
                 self.book_listbox.insert(tk.END, display_text)
+from datetime import datetime
+
+def calculate_late_fee(issue_date, return_date, per_day_fee=2):
+    fmt = "%Y-%m-%d"
+    days = (datetime.strptime(return_date, fmt) - datetime.strptime(issue_date, fmt)).days
+    if days <= 14:
+        return 0
+    return (days - 14) * per_day_fee
+
+import tkinter as tk
+from database import init_db
+from ui import LibraryUI
+
+if __name__ == "__main__":
+    init_db()
+    root = tk.Tk()
+    app = LibraryUI(root)
+    root.mainloop()
+import sqlite3
+
+def init_db():
+    conn = sqlite3.connect("library.db")
+    cursor = conn.cursor()
+
+    # Create books table
+    cursor.execute('''CREATE TABLE IF NOT EXISTS books (
+        id INTEGER PRIMARY KEY,
+        title TEXT,
+        author TEXT,
+        available INTEGER DEFAULT 1
+    )''')
+
+    # Create issue log table
+    cursor.execute('''CREATE TABLE IF NOT EXISTS issues (
+        id INTEGER PRIMARY KEY,
+        book_id INTEGER,
+        user TEXT,
+        issue_date TEXT,
+        return_date TEXT,
+        FOREIGN KEY(book_id) REFERENCES books(id)
+    )''')
+
+    conn.commit()
+    conn.close()
+
+def connect():
+    return sqlite3.connect("library.db")
